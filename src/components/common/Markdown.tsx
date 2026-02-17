@@ -13,7 +13,14 @@ interface MarkdownProps {
  */
 export default function Markdown({ children }: MarkdownProps) {
   return (
-    <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeSanitize]}>
+    <ReactMarkdown
+      remarkPlugins={[remarkGfm]}
+      rehypePlugins={[rehypeSanitize]}
+      components={{
+        // Blog title is already shown in the page header, skip h1 in body.
+        h1: () => null,
+      }}
+    >
       {children}
     </ReactMarkdown>
   );

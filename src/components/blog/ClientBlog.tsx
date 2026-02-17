@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
 import type { BlogPost } from "@/types/blog";
 import Navbar from "@/components/layout/Navbar";
 import BlogList from "@/components/blog/BlogList";
@@ -14,11 +15,18 @@ const PAGE_SIZE = 10;
  * Blog page client shell.
  *
  * Owns pagination state, search-modal state, and the Ctrl+K shortcut.
+ * Page number is synced to the URL search param `?page=N` so that
+ * browser back navigation restores the correct page.
  */
 export default function ClientBlog() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+
+  const initialPage = Math.max(1, Number(searchParams.get("page")) || 1);
+
   const [posts, setPosts] = useState<BlogPost[]>([]);
   const [total, setTotal] = useState(0);
-  const [page, setPage] = useState(1);
+  const [page, setPage] = useState(initialPage);
   const [loading, setLoading] = useState(true);
   const [searchOpen, setSearchOpen] = useState(false);
 
@@ -42,6 +50,16 @@ export default function ClientBlog() {
       setLoading(false);
     }
   }, []);
+
+  /* Handle page change: update state + URL */
+  const handlePageChange = useCallback(
+    (newPage: number) => {
+      setPage(newPage);
+      const url = newPage === 1 ? "/blog" : `/blog?page=${newPage}`;
+      router.push(url, { scroll: false });
+    },
+    [router],
+  );
 
   /* Initial fetch + refetch on page change */
   useEffect(() => {
@@ -82,7 +100,7 @@ export default function ClientBlog() {
               <Pagination
                 page={page}
                 totalPages={totalPages}
-                onPageChange={setPage}
+                onPageChange={handlePageChange}
               />
             )}
           </div>

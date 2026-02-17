@@ -25,7 +25,7 @@ export default function ClientDetail({ data }: ClientDetailProps) {
       <article className="mx-auto max-w-3xl px-5 py-8">
         {/* Back link */}
         <button
-          onClick={() => router.push("/blog")}
+          onClick={() => router.back()}
           className="mb-4 inline-flex items-center gap-2 text-sm text-[var(--text-secondary)] transition-colors hover:text-[var(--accent)]"
         >
           <ArrowLeft className="h-4 w-4" />
