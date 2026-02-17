@@ -1,0 +1,75 @@
+import type { Metadata } from "next";
+import type { ServerStats, Project } from "@/types/lab";
+import Navbar from "@/components/layout/Navbar";
+import ServerStatus from "@/components/lab/ServerStatus";
+import ProjectGrid from "@/components/lab/ProjectGrid";
+
+export const metadata: Metadata = {
+  title: "MyLab",
+  description: "Server status & project showcase",
+};
+
+/* ------------------------------------------------------------------ */
+/*  Placeholder data – replace with real API calls later               */
+/* ------------------------------------------------------------------ */
+
+const stats: ServerStats = { cpu: 18, memory: 42, disk: 68 };
+
+const projects: Project[] = [
+  {
+    id: "1",
+    title: "Personal Blog",
+    description:
+      "A modern personal blog built with Next.js 16, TypeScript and Tailwind CSS, featuring glassmorphism design.",
+    href: "https://github.com/",
+    tags: ["Next.js", "TypeScript", "Tailwind"],
+    icon: "📝",
+  },
+  {
+    id: "2",
+    title: "Blog Backend",
+    description:
+      "Go-based REST API server with MongoDB, providing blog CRUD, weather data and system monitoring.",
+    href: "https://github.com/",
+    tags: ["Go", "MongoDB", "REST"],
+    icon: "⚙️",
+  },
+  {
+    id: "3",
+    title: "Firefly Theme",
+    description:
+      "A beautiful Astro blog theme template based on Fuwari, featuring dual sidebars and grid layouts.",
+    href: "https://github.com/",
+    tags: ["Astro", "Svelte", "Tailwind"],
+    icon: "🔥",
+  },
+  {
+    id: "4",
+    title: "More Coming…",
+    description:
+      "Stay tuned! More projects and experiments are on the way.",
+    tags: ["WIP"],
+    icon: "🧪",
+  },
+];
+
+/* ------------------------------------------------------------------ */
+/*  Page                                                               */
+/* ------------------------------------------------------------------ */
+
+export default function LabPage() {
+  return (
+    <>
+      <Navbar />
+      <div className="h-16" />
+
+      <main className="mx-auto grid max-w-6xl gap-6 px-5 py-8 lg:grid-cols-[280px_1fr]">
+        {/* Left column – server status */}
+        <ServerStatus stats={stats} />
+
+        {/* Right column – project cards */}
+        <ProjectGrid projects={projects} />
+      </main>
+    </>
+  );
+}
