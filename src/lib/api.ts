@@ -44,3 +44,24 @@ export async function apiFetch<T>(
     return null;
   }
 }
+
+/**
+ * Fetch a paginated list, returning both the data array and total count.
+ */
+export async function apiFetchPaginated<T>(
+  path: string,
+  init?: RequestInit,
+): Promise<{ data: T[]; total: number } | null> {
+  try {
+    const res = await fetch(apiUrl(path), {
+      ...init,
+      headers: { "Content-Type": "application/json", ...init?.headers },
+    });
+    if (!res.ok) return null;
+    const body: ApiResponse<T[]> & { total?: number } = await res.json();
+    if (!body.success) return null;
+    return { data: body.data ?? [], total: body.total ?? 0 };
+  } catch {
+    return null;
+  }
+}

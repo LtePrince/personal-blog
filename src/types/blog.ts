@@ -19,6 +19,16 @@ export interface ApiResponse<T> {
   success: boolean;
   data?: T;
   error?: string;
+  total?: number;
+}
+
+/** Paginated list response. */
+export interface PaginatedResult<T> {
+  items: T[];
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
 }
 
 /** Normalise tags to a string array (handles undefined / empty). */

@@ -37,7 +37,7 @@ export default async function HomePage() {
       <Navbar />
 
       {/* Spacer for fixed navbar */}
-      <div className="h-16" />
+      <div className="h-24" />
 
       <main className="mx-auto grid max-w-6xl gap-6 px-5 py-8 md:grid-cols-[1fr_280px]">
         {/* ---- Main column: Latest Posts ---- */}

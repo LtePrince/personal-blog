@@ -61,7 +61,7 @@ export default function LabPage() {
   return (
     <>
       <Navbar />
-      <div className="h-16" />
+      <div className="h-24" />
 
       <main className="mx-auto grid max-w-6xl gap-6 px-5 py-8 lg:grid-cols-[280px_1fr]">
         {/* Left column – server status */}

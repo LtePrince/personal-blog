@@ -9,13 +9,14 @@ import { Skeleton } from "@/components/common/Skeleton";
 
 interface BlogListProps {
   posts: BlogPost[];
+  loading?: boolean;
 }
 
 /**
  * Main blog listing – vertical card list.
  */
-export default function BlogList({ posts }: BlogListProps) {
-  if (posts.length === 0) {
+export default function BlogList({ posts, loading }: BlogListProps) {
+  if (loading || posts.length === 0) {
     return (
       <div className="flex flex-col gap-3">
         {Array.from({ length: 4 }).map((_, i) => (

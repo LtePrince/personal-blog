@@ -5,19 +5,48 @@ import type { BlogPost } from "@/types/blog";
 import Navbar from "@/components/layout/Navbar";
 import BlogList from "@/components/blog/BlogList";
 import BlogSidebar from "@/components/blog/BlogSidebar";
+import Pagination from "@/components/blog/Pagination";
 import SearchModal, { SearchTrigger } from "@/components/blog/SearchModal";
 
-interface ClientBlogProps {
-  posts: BlogPost[];
-}
+const PAGE_SIZE = 10;
 
 /**
  * Blog page client shell.
  *
- * Owns the search-modal state and the Ctrl+K global shortcut.
+ * Owns pagination state, search-modal state, and the Ctrl+K shortcut.
  */
-export default function ClientBlog({ posts }: ClientBlogProps) {
+export default function ClientBlog() {
+  const [posts, setPosts] = useState<BlogPost[]>([]);
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
+  const [loading, setLoading] = useState(true);
   const [searchOpen, setSearchOpen] = useState(false);
+
+  /* Fetch a page of posts */
+  const fetchPage = useCallback(async (pageNo: number) => {
+    setLoading(true);
+    try {
+      const params = new URLSearchParams({
+        page_no: String(pageNo),
+        page_size: String(PAGE_SIZE),
+      });
+      const res = await fetch(`/api/blog?${params.toString()}`);
+      const body = await res.json();
+      if (body.success) {
+        setPosts(body.data ?? []);
+        setTotal(body.total ?? 0);
+      }
+    } catch (err) {
+      console.error("Failed to fetch posts:", err);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  /* Initial fetch + refetch on page change */
+  useEffect(() => {
+    fetchPage(page);
+  }, [page, fetchPage]);
 
   /* Global Ctrl/Cmd + K shortcut */
   useEffect(() => {
@@ -32,11 +61,12 @@ export default function ClientBlog({ posts }: ClientBlogProps) {
   }, []);
 
   const closeSearch = useCallback(() => setSearchOpen(false), []);
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
   return (
     <>
       <Navbar />
-      <div className="h-16" />
+      <div className="h-24" />
 
       <div className="mx-auto max-w-6xl px-5 py-8">
         {/* Search trigger bar */}
@@ -46,7 +76,16 @@ export default function ClientBlog({ posts }: ClientBlogProps) {
 
         {/* Two-column: main list + sidebar */}
         <div className="grid gap-6 md:grid-cols-[1fr_260px]">
-          <BlogList posts={posts} />
+          <div className="flex flex-col gap-6">
+            <BlogList posts={posts} loading={loading} />
+            {totalPages > 1 && (
+              <Pagination
+                page={page}
+                totalPages={totalPages}
+                onPageChange={setPage}
+              />
+            )}
+          </div>
           <BlogSidebar />
         </div>
       </div>
