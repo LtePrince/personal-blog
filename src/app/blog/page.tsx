@@ -12,11 +12,9 @@ export const metadata: Metadata = {
 export const dynamic = "force-dynamic";
 
 async function getPosts(): Promise<BlogPost[]> {
-  const data = await apiFetch<BlogPost[]>("Blog", { cache: "no-store" });
+  const data = await apiFetch<BlogPost[]>("blog", { cache: "no-store" });
   if (!Array.isArray(data)) return [];
-  return data
-    .slice()
-    .sort((a, b) => (Date.parse(b.date) || 0) - (Date.parse(a.date) || 0));
+  return data;
 }
 
 export default async function BlogPage() {

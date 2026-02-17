@@ -11,10 +11,9 @@ export const dynamic = "force-dynamic";
 /* ------------------------------------------------------------------ */
 
 async function getPost(id: string): Promise<BlogPostDetail | null> {
-  return apiFetch<BlogPostDetail>(
-    `BlogDetail?id=${encodeURIComponent(id)}`,
-    { cache: "no-store" },
-  );
+  return apiFetch<BlogPostDetail>(`blog/${encodeURIComponent(id)}`, {
+    cache: "no-store",
+  });
 }
 
 /* ------------------------------------------------------------------ */

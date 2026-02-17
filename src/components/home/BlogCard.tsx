@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { Calendar, ArrowRight } from "lucide-react";
 import type { BlogPost } from "@/types/blog";
+import { parseTags } from "@/types/blog";
 import { cn } from "@/lib/utils";
 
 interface BlogCardProps {

@@ -20,3 +20,9 @@ export interface ApiResponse<T> {
   data?: T;
   error?: string;
 }
+
+/** Normalise tags to a string array (handles undefined / empty). */
+export function parseTags(tags?: string[]): string[] {
+  if (!tags || tags.length === 0) return [];
+  return tags;
+}

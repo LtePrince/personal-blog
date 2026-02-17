@@ -18,12 +18,11 @@ export const dynamic = "force-dynamic";
  * Returns an empty array when the API is unreachable.
  */
 async function getLatestPosts(): Promise<BlogPost[]> {
-  const data = await apiFetch<BlogPost[]>("Blog", { cache: "no-store" });
+  const data = await apiFetch<BlogPost[]>("blog/recent?limit=5", {
+    cache: "no-store",
+  });
   if (!Array.isArray(data)) return [];
-  return data
-    .slice()
-    .sort((a, b) => (Date.parse(b.date) || 0) - (Date.parse(a.date) || 0))
-    .slice(0, 5);
+  return data;
 }
 
 /* ------------------------------------------------------------------ */
