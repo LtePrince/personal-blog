@@ -44,7 +44,7 @@ export default async function HomePage() {
         <LatestPosts posts={posts} />
 
         {/* ---- Right sidebar ---- */}
-        <div className="flex flex-col gap-6">
+        <div className="sticky top-24 flex flex-col gap-6 self-start">
           <ProfileCard />
           <AnnouncementCard />
         </div>

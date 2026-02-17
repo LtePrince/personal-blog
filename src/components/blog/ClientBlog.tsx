@@ -86,7 +86,9 @@ export default function ClientBlog() {
               />
             )}
           </div>
-          <BlogSidebar />
+          <div className="sticky top-24 self-start">
+            <BlogSidebar />
+          </div>
         </div>
       </div>
 

@@ -65,7 +65,9 @@ export default function LabPage() {
 
       <main className="mx-auto grid max-w-6xl gap-6 px-5 py-8 lg:grid-cols-[280px_1fr]">
         {/* Left column – server status */}
-        <ServerStatus stats={stats} />
+        <div className="sticky top-24 self-start">
+          <ServerStatus stats={stats} />
+        </div>
 
         {/* Right column – project cards */}
         <ProjectGrid projects={projects} />

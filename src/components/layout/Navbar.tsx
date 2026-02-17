@@ -56,7 +56,9 @@ export default function Navbar() {
       <header
         className={cn(
           "fixed top-0 inset-x-0 z-50 transition-all duration-300",
-          scrolled ? "glass shadow-sm" : "bg-transparent",
+          scrolled
+            ? "bg-[var(--bg-primary)] shadow-sm"
+            : "bg-transparent",
         )}
       >
         <nav className="mx-auto flex h-16 max-w-6xl items-center justify-between px-5">
