@@ -5,6 +5,7 @@ import Navbar from "@/components/layout/Navbar";
 import LatestPosts from "@/components/home/LatestPosts";
 import ProfileCard from "@/components/home/ProfileCard";
 import AnnouncementCard from "@/components/home/AnnouncementCard";
+import SiteStats from "@/components/home/SiteStats";
 
 export const metadata: Metadata = {
   title: "Home",
@@ -47,6 +48,7 @@ export default async function HomePage() {
         <div className="sticky top-24 flex flex-col gap-6 self-start">
           <ProfileCard />
           <AnnouncementCard />
+          <SiteStats />
         </div>
       </main>
     </>
