@@ -35,7 +35,7 @@ export async function GET(request: NextRequest) {
         title: item.title,
         summary: item.summary,
         date: item.date,
-        tags: item.tags ? item.tags.split(",").map((t) => t.trim()) : undefined,
+        tags: item.tags && item.tags.length > 0 ? item.tags : undefined,
         cover: item.cover || undefined,
         author: item.author || undefined,
       }));

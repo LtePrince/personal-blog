@@ -54,18 +54,21 @@ export default function BlogCard({ post, index = 0 }: BlogCardProps) {
       </div>
 
       {/* Tags */}
-      {post.tags && post.tags.length > 0 && (
-        <div className="flex flex-wrap gap-1.5">
-          {post.tags.map((tag) => (
-            <span
-              key={tag}
-              className="rounded-full bg-[var(--accent-subtle)] px-2.5 py-0.5 text-xs font-medium text-[var(--accent)]"
-            >
-              {tag}
-            </span>
-          ))}
-        </div>
-      )}
+      {(() => {
+        const tagList = parseTags(post.tags);
+        return tagList.length > 0 ? (
+          <div className="flex flex-wrap gap-1.5">
+            {tagList.map((tag) => (
+              <span
+                key={tag}
+                className="rounded-full bg-[var(--accent-subtle)] px-2.5 py-0.5 text-xs font-medium text-[var(--accent)]"
+              >
+                {tag}
+              </span>
+            ))}
+          </div>
+        ) : null;
+      })()}
     </Link>
   );
 }

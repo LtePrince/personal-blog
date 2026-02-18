@@ -4,7 +4,7 @@ export interface BlogPost {
   title: string;
   summary: string;
   date: string;
-  tags?: string[];
+  tags?: string | string[];
   cover?: string;
   author?: string;
 }
@@ -31,8 +31,16 @@ export interface PaginatedResult<T> {
   totalPages: number;
 }
 
-/** Normalise tags to a string array (handles undefined / empty). */
-export function parseTags(tags?: string[]): string[] {
-  if (!tags || tags.length === 0) return [];
-  return tags;
+/** Normalise tags to a string array.
+ *  Handles: undefined, null, string (comma-separated legacy), string[]. */
+export function parseTags(tags?: string | string[] | null): string[] {
+  if (!tags) return [];
+  if (typeof tags === "string") {
+    return tags
+      .split(",")
+      .map((t) => t.trim())
+      .filter(Boolean);
+  }
+  if (Array.isArray(tags)) return tags;
+  return [];
 }

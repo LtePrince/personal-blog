@@ -29,7 +29,7 @@ export interface BackendBlogItem {
   title: string;
   summary: string;
   date: string;
-  tags?: string;
+  tags?: string[];
   cover?: string;
   author?: string;
 }

@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import type { BlogPostDetail } from "@/types/blog";
+import { parseTags } from "@/types/blog";
 import Navbar from "@/components/layout/Navbar";
 import Markdown from "@/components/common/Markdown";
 import Comments from "@/components/common/Comments";
@@ -45,7 +46,7 @@ export default function ClientDetail({ data }: ClientDetailProps) {
             </p>
             {data.tags && data.tags.length > 0 && (
               <div className="mt-3 flex flex-wrap gap-2">
-                {data.tags.map((tag) => (
+                {parseTags(data.tags).map((tag) => (
                   <span
                     key={tag}
                     className="rounded-full bg-[var(--accent-subtle)] px-2.5 py-0.5 text-xs font-medium text-[var(--accent)]"
