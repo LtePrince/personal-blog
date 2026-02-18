@@ -29,6 +29,7 @@ export default function ClientBlog() {
   const [page, setPage] = useState(initialPage);
   const [loading, setLoading] = useState(true);
   const [searchOpen, setSearchOpen] = useState(false);
+  const [searchTag, setSearchTag] = useState<string | undefined>(undefined);
 
   /* Fetch a page of posts */
   const fetchPage = useCallback(async (pageNo: number) => {
@@ -78,7 +79,16 @@ export default function ClientBlog() {
     return () => window.removeEventListener("keydown", handler);
   }, []);
 
-  const closeSearch = useCallback(() => setSearchOpen(false), []);
+  const closeSearch = useCallback(() => {
+    setSearchOpen(false);
+    setSearchTag(undefined);
+  }, []);
+
+  /** Open search modal with an optional pre-selected tag. */
+  const openSearchWithTag = useCallback((tag: string) => {
+    setSearchTag(tag);
+    setSearchOpen(true);
+  }, []);
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
   return (
@@ -105,13 +115,17 @@ export default function ClientBlog() {
             )}
           </div>
           <div className="sticky top-24 self-start">
-            <BlogSidebar />
+            <BlogSidebar onTagClick={openSearchWithTag} />
           </div>
         </div>
       </div>
 
       {/* Search overlay */}
-      <SearchModal posts={posts} open={searchOpen} onClose={closeSearch} />
+      <SearchModal
+        open={searchOpen}
+        onClose={closeSearch}
+        initialTag={searchTag}
+      />
     </>
   );
 }

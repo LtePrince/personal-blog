@@ -17,11 +17,16 @@ interface TagItem {
   postCount: number;
 }
 
+interface BlogSidebarProps {
+  /** Called when a tag chip is clicked – opens search with that tag. */
+  onTagClick?: (tagName: string) => void;
+}
+
 /**
  * Thin sidebar shown next to the blog list.
  * Fetches recent posts and tags from the backend.
  */
-export default function BlogSidebar() {
+export default function BlogSidebar({ onTagClick }: BlogSidebarProps) {
   const { t } = useLocale();
   const [recentPosts, setRecentPosts] = useState<RecentPost[]>([]);
   const [tags, setTags] = useState<TagItem[]>([]);
@@ -116,15 +121,16 @@ export default function BlogSidebar() {
         ) : tags.length > 0 ? (
           <div className="flex flex-wrap gap-2">
             {tags.map((tag) => (
-              <span
+              <button
                 key={tag.id}
-                className="inline-flex items-center gap-1 rounded-full bg-[var(--accent-subtle)] px-3 py-1 text-xs font-medium text-[var(--accent)] transition-colors hover:bg-[var(--accent)] hover:text-white cursor-default"
+                onClick={() => onTagClick?.(tag.name)}
+                className="inline-flex items-center gap-1 rounded-full bg-[var(--accent-subtle)] px-3 py-1 text-xs font-medium text-[var(--accent)] transition-colors hover:bg-[var(--accent)] hover:text-white cursor-pointer"
               >
                 {tag.name}
                 <span className="text-[0.625rem] opacity-70">
                   {tag.postCount}
                 </span>
-              </span>
+              </button>
             ))}
           </div>
         ) : (
