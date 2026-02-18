@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { Pin, Tags } from "lucide-react";
 import { Skeleton } from "@/components/common/Skeleton";
 import { useLocale } from "@/contexts/LocaleContext";
 
@@ -71,8 +72,9 @@ export default function BlogSidebar({ onTagClick }: BlogSidebarProps) {
     <aside className="flex flex-col gap-5">
       {/* Recent posts mini-list */}
       <div className="glass rounded-[var(--radius-lg)] px-5 py-5">
-        <h3 className="mb-3 text-sm font-semibold text-[var(--text-primary)]">
-          📌 {t({ en: "Recent Posts", "zh-CN": "最近文章" })}
+        <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold text-[var(--text-primary)]">
+          <Pin className="h-4 w-4 text-[var(--accent)]" />
+          {t({ en: "Recent Posts", "zh-CN": "最近文章" })}
         </h3>
         {loadingRecent ? (
           <ul className="flex flex-col gap-2">
@@ -109,8 +111,9 @@ export default function BlogSidebar({ onTagClick }: BlogSidebarProps) {
 
       {/* Tags cloud */}
       <div className="glass rounded-[var(--radius-lg)] px-5 py-5">
-        <h3 className="mb-3 text-sm font-semibold text-[var(--text-primary)]">
-          🏷️ {t({ en: "Tags", "zh-CN": "标签" })}
+        <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold text-[var(--text-primary)]">
+          <Tags className="h-4 w-4 text-[var(--accent)]" />
+          {t({ en: "Tags", "zh-CN": "标签" })}
         </h3>
         {loadingTags ? (
           <div className="flex flex-wrap gap-2">

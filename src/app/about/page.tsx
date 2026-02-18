@@ -17,25 +17,37 @@ export const metadata: Metadata = {
 
 const education: Education[] = [
   {
-    school: "Some University",
+    school: "Huazhong University of Science and Technology",
     degree: "Bachelor",
     major: "Computer Science",
-    period: "2020 – 2024",
+    period: "2021 – 2025",
+  },
+  {
+    school: "University of Sydney",
+    degree: "Master",
+    major: "Computer Science(advanced)",
+    period: "2026 – 2028",
   },
 ];
 
 const techStack: TechCategory[] = [
   {
-    name: "Frontend",
-    items: ["React", "Next.js", "TypeScript", "Tailwind CSS", "Astro", "Svelte"],
+    name: "Full Stack",
+    items: [
+      "React", "Next.js", "TypeScript", "Go", "Python", "Node.js", "MongoDB", "PostgreSQL", "Redis",
+    ],
   },
   {
-    name: "Backend",
-    items: ["Go", "Node.js", "Python", "MongoDB", "PostgreSQL", "Redis"],
+    name: "Cryptography",
+    items: ["Blockchain", "Zero-Knowledge Proofs", "Homomorphic Encryption"],
   },
   {
     name: "DevOps & Tools",
-    items: ["Docker", "Nginx", "GitHub Actions", "Linux", "Vercel"],
+    items: ["Linux", "Nginx", "GitHub Actions", "Docker"],
+  },
+  {
+    name: "Exploring...",
+    items: ["Neural Networks", "AI Architecture", "AI Applications"],
   },
 ];
 

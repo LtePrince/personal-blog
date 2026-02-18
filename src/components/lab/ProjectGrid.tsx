@@ -1,6 +1,6 @@
 "use client";
 
-import { ExternalLink } from "lucide-react";
+import { ExternalLink, Rocket } from "lucide-react";
 import type { Project } from "@/types/lab";
 import { cn } from "@/lib/utils";
 import { useLocale } from "@/contexts/LocaleContext";
@@ -17,8 +17,9 @@ export default function ProjectGrid({ projects }: ProjectGridProps) {
 
   return (
     <section>
-      <h2 className="mb-5 text-base font-semibold text-[var(--text-primary)]">
-        🚀 {t({ en: "Projects", "zh-CN": "项目展示" })}
+      <h2 className="mb-5 flex items-center gap-2 text-base font-semibold text-[var(--text-primary)]">
+        <Rocket className="h-5 w-5 text-[var(--accent)]" />
+        {t({ en: "Projects", "zh-CN": "项目展示" })}
       </h2>
 
       <div className="grid gap-4 sm:grid-cols-2">

@@ -1,6 +1,6 @@
 "use client";
 
-import { Cpu, MemoryStick, HardDrive } from "lucide-react";
+import { Cpu, MemoryStick, HardDrive, Monitor } from "lucide-react";
 import type { ServerStats } from "@/types/lab";
 import { cn } from "@/lib/utils";
 import { useLocale } from "@/contexts/LocaleContext";
@@ -29,8 +29,9 @@ export default function ServerStatus({ stats }: ServerStatusProps) {
 
   return (
     <section className="glass rounded-[var(--radius-lg)] px-6 py-6">
-      <h2 className="mb-5 text-base font-semibold text-[var(--text-primary)]">
-        🖥️ {t({ en: "Server Status", "zh-CN": "服务器状态" })}
+      <h2 className="mb-5 flex items-center gap-2 text-base font-semibold text-[var(--text-primary)]">
+        <Monitor className="h-5 w-5 text-[var(--accent)]" />
+        {t({ en: "Server Status", "zh-CN": "服务器状态" })}
       </h2>
 
       <div className="flex flex-col gap-4">

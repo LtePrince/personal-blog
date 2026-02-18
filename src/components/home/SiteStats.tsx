@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { FileText, Tags, Clock, CalendarCheck } from "lucide-react";
+import { FileText, Tags, Clock, CalendarCheck, BarChart3 } from "lucide-react";
 import { useLocale } from "@/contexts/LocaleContext";
 
 interface Stats {
@@ -73,8 +73,9 @@ export default function SiteStats() {
 
   return (
     <aside className="glass rounded-[var(--radius-lg)] px-5 py-5">
-      <h3 className="mb-3 text-sm font-semibold text-[var(--text-primary)]">
-        📊 {t({ en: "Site Stats", "zh-CN": "站点统计" })}
+      <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold text-[var(--text-primary)]">
+        <BarChart3 className="h-4 w-4 text-[var(--accent)]" />
+        {t({ en: "Site Stats", "zh-CN": "站点统计" })}
       </h3>
       <ul className="flex flex-col gap-2.5">
         {items.map((item) => (
