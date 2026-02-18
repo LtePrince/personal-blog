@@ -36,15 +36,6 @@ const projects: Project[] = [
   },
   {
     id: "3",
-    title: "Firefly Theme",
-    description:
-      "A beautiful Astro blog theme template based on Fuwari, featuring dual sidebars and grid layouts.",
-    href: "https://github.com/",
-    tags: ["Astro", "Svelte", "Tailwind"],
-    icon: "🔥",
-  },
-  {
-    id: "4",
     title: "More Coming…",
     description:
       "Stay tuned! More projects and experiments are on the way.",

@@ -26,8 +26,7 @@ export default function ProjectGrid({ projects }: ProjectGridProps) {
           <a
             key={project.id}
             href={project.href ?? "#"}
-            target="_blank"
-            rel="noopener noreferrer"
+            {...(project.href ? { target: "_blank", rel: "noopener noreferrer" } : {})}
             className={cn(
               "group glass flex flex-col gap-3 rounded-[var(--radius-md)] px-5 py-5",
               "transition-all duration-300 hover:shadow-md hover:-translate-y-0.5",
