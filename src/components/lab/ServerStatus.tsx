@@ -4,10 +4,7 @@ import { Cpu, MemoryStick, HardDrive, Monitor } from "lucide-react";
 import type { ServerStats } from "@/types/lab";
 import { cn } from "@/lib/utils";
 import { useLocale } from "@/contexts/LocaleContext";
-
-interface ServerStatusProps {
-  stats: ServerStats;
-}
+import { useEffect, useState } from "react";
 
 const gauges = [
   { key: "cpu" as const, label: "CPU", icon: Cpu },
@@ -24,8 +21,20 @@ function barColor(pct: number): string {
 /**
  * Server health gauges – CPU / Memory / Disk usage bars.
  */
-export default function ServerStatus({ stats }: ServerStatusProps) {
+export default function ServerStatus() {
   const { t } = useLocale();
+  const [stats, setSystemStats] = useState<ServerStats | null>(null);
+
+  useEffect(() => {
+    fetch("/api/system/stats")
+      .then((res) => res.json())
+      .then((body) => {
+        if (body.success && body.data) {
+          setSystemStats(body.data);
+        }
+      })
+      .catch(console.error);
+    }, []);
 
   return (
     <section className="glass rounded-[var(--radius-lg)] px-6 py-6">
@@ -36,7 +45,7 @@ export default function ServerStatus({ stats }: ServerStatusProps) {
 
       <div className="flex flex-col gap-4">
         {gauges.map(({ key, label, icon: Icon }) => {
-          const pct = stats[key];
+          const pct = stats ? stats[key] : 0;
           return (
             <div key={key} className="flex flex-col gap-1.5">
               <div className="flex items-center justify-between text-sm">

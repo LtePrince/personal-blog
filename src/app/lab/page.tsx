@@ -13,8 +13,6 @@ export const metadata: Metadata = {
 /*  Placeholder data – replace with real API calls later               */
 /* ------------------------------------------------------------------ */
 
-const stats: ServerStats = { cpu: 18, memory: 42, disk: 68 };
-
 const projects: Project[] = [
   {
     id: "1",
@@ -57,7 +55,7 @@ export default function LabPage() {
       <main className="mx-auto grid max-w-6xl gap-6 px-5 py-8 lg:grid-cols-[280px_1fr]">
         {/* Left column – server status */}
         <div className="sticky top-24 self-start">
-          <ServerStatus stats={stats} />
+          <ServerStatus/>
         </div>
 
         {/* Right column – project cards */}
