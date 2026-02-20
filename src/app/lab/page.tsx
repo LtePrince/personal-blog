@@ -19,7 +19,7 @@ const projects: Project[] = [
     title: "Personal Blog",
     description:
       "A modern personal blog built with Next.js 16, TypeScript and Tailwind CSS, featuring glassmorphism design.",
-    href: "https://github.com/",
+    href: "https://github.com/LtePrince/personal-blog",
     tags: ["Next.js", "TypeScript", "Tailwind"],
     icon: "📝",
   },
@@ -28,7 +28,7 @@ const projects: Project[] = [
     title: "Blog Backend",
     description:
       "Go-based REST API server with MongoDB, providing blog CRUD, weather data and system monitoring.",
-    href: "https://github.com/",
+    href: "https://github.com/LtePrince/blog-backend",
     tags: ["Go", "MongoDB", "REST"],
     icon: "⚙️",
   },
