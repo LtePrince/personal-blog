@@ -1,0 +1,97 @@
+name: Build and Deploy Frontend
+
+on:
+  push:
+    branches: [main]
+    tags: ["v[0-9]+.[0-9]+.[0-9]+"]
+
+# --- 1. 这里定义你的全局配置 ---
+env:
+  APP_NAME: personal-blog
+  PRD_DIR: /www/wwwroot/personal-blog
+  STG_DIR: /www/wwwroot/personal-blog-stg
+  KEEP_RELEASES: 5
+  NODE_VERSION: 23
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      # --- 2. 确定本次部署的环境变量 ---
+      - name: Determine Environment
+        id: target
+        run: |
+          if [[ "${GITHUB_REF}" == refs/tags/* ]]; then
+            echo "ENV_NAME=prd" >> $GITHUB_OUTPUT
+            echo "DEPLOY_DIR=${{ env.PRD_DIR }}" >> $GITHUB_OUTPUT
+            echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+          else
+            echo "ENV_NAME=stg" >> $GITHUB_OUTPUT
+            echo "DEPLOY_DIR=${{ env.STG_DIR }}" >> $GITHUB_OUTPUT
+            echo "VERSION=${GITHUB_SHA:0:7}" >> $GITHUB_OUTPUT
+          fi
+          echo "TS=$(date +%Y%m%d%H%M%S)" >> $GITHUB_OUTPUT
+
+      - name: Install & Build
+        run: |
+          npm ci
+          npm run build
+
+      - name: Package Artifacts
+        run: |
+          tar -czf release.tar.gz .next public package.json package-lock.json next.config.js
+
+      - name: Upload to Server
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USERNAME }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          source: "release.tar.gz"
+          # 使用上面步骤计算出的变量
+          target: "${{ steps.target.outputs.DEPLOY_DIR }}/releases/${{ steps.target.outputs.TS }}"
+
+      - name: Remote Deploy
+        uses: appleboy/ssh-action@v0.1.10
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USERNAME }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          # 将需要的变量显式传给远程 Shell
+          envs: APP_NAME,KEEP_RELEASES
+          script: |
+            set -euo pipefail
+            
+            # 从外部传入或计算
+            DEPLOY_DIR="${{ steps.target.outputs.DEPLOY_DIR }}"
+            RELEASE_TS="${{ steps.target.outputs.TS }}"
+            ENV_NAME="${{ steps.target.outputs.ENV_NAME }}"
+            RELEASE_PATH="$DEPLOY_DIR/releases/$RELEASE_TS"
+            FINAL_APP_NAME="$APP_NAME-$ENV_NAME"
+
+            # 解压
+            cd "$RELEASE_PATH"
+            tar -xzf release.tar.gz && rm release.tar.gz
+            npm ci --only=production
+
+            # 切换软链接 (Atomic switch)
+            ln -sfn "$RELEASE_PATH" "$DEPLOY_DIR/current"
+
+            # PM2 启动/重启
+            cd "$DEPLOY_DIR/current"
+            pm2 describe "$FINAL_APP_NAME" > /dev/null && pm2 reload "$FINAL_APP_NAME" || \
+            NODE_ENV=production PORT=3000 pm2 start npm --name "$FINAL_APP_NAME" -- start
+            pm2 save
+
+            # 清理旧版本
+            cd "$DEPLOY_DIR/releases"
+            ls -1dt */ | tail -n +$(($KEEP_RELEASES + 1)) | xargs -r rm -rf
