@@ -48,7 +48,7 @@ jobs:
 
       - name: Package Artifacts
         run: |
-          tar -czf release.tar.gz .next public package.json package-lock.json next.config.js
+          tar -czf release.tar.gz .next public package.json package-lock.json next.config.ts
 
       - name: Upload to Server
         uses: appleboy/scp-action@v0.1.7
