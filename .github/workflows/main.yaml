@@ -1,14 +1,12 @@
-name: Build and Deploy Frontend
+name: Build and Deploy Frontend (Production Only)
 
 on:
   push:
-    tags: ["v[0-9]+.[0-9]+.[0-9]+"]
+    tags: ["v[0-9]+.[0-9]+.[0-9]+"] # 严格匹配版本号标签触发
 
-# --- 1. 这里定义你的全局配置 ---
 env:
   APP_NAME: personal-blog
   PRD_DIR: /www/wwwroot/personal-blog
-  STG_DIR: /www/wwwroot/personal-blog-stg
   KEEP_RELEASES: 5
   NODE_VERSION: 23
 
@@ -25,29 +23,29 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
 
-      # --- 2. 确定本次部署的环境变量 ---
-      - name: Determine Environment
-        id: target
+      # --- 1. 生成 .env 文件 (必须在 Build 之前) ---
+      # 这样 Next.js 构建时能拿到环境变量
+      - name: Create .env file
         run: |
-          if [[ "${GITHUB_REF}" == refs/tags/* ]]; then
-            echo "ENV_NAME=prd" >> $GITHUB_OUTPUT
-            echo "DEPLOY_DIR=${{ env.PRD_DIR }}" >> $GITHUB_OUTPUT
-            echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
-          else
-            echo "ENV_NAME=stg" >> $GITHUB_OUTPUT
-            echo "DEPLOY_DIR=${{ env.STG_DIR }}" >> $GITHUB_OUTPUT
-            echo "VERSION=${GITHUB_SHA:0:7}" >> $GITHUB_OUTPUT
-          fi
-          echo "TS=$(date +%Y%m%d%H%M%S)" >> $GITHUB_OUTPUT
+          echo "NEXT_PUBLIC_API_BASE_URL=${{ secrets.NEXT_PUBLIC_API_BASE_URL }}" >> .env
+          echo "BLOG_BACKEND_URL=${{ secrets.BLOG_BACKEND_URL }}" >> .env
+          echo "✅ .env file created"
 
       - name: Install & Build
         run: |
           npm ci
           npm run build
 
+      - name: Generate Vars
+        id: vars
+        run: |
+          echo "TS=$(date +%Y%m%d%H%M%S)" >> $GITHUB_OUTPUT
+          echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+
       - name: Package Artifacts
         run: |
-          tar -czf release.tar.gz .next public package.json package-lock.json next.config.ts
+          # 包含 .env 一起打包，确保运行时 PM2 也能读取
+          tar -czf release.tar.gz .next public package.json package-lock.json next.config.ts .env
 
       - name: Upload to Server
         uses: appleboy/scp-action@v0.1.7
@@ -56,8 +54,7 @@ jobs:
           username: ${{ secrets.SERVER_USERNAME }}
           key: ${{ secrets.SERVER_SSH_KEY }}
           source: "release.tar.gz"
-          # 使用上面步骤计算出的变量
-          target: "${{ steps.target.outputs.DEPLOY_DIR }}/releases/${{ steps.target.outputs.TS }}"
+          target: "${{ env.PRD_DIR }}/releases/${{ steps.vars.outputs.TS }}"
 
       - name: Remote Deploy
         uses: appleboy/ssh-action@v0.1.10
@@ -65,32 +62,39 @@ jobs:
           host: ${{ secrets.SERVER_HOST }}
           username: ${{ secrets.SERVER_USERNAME }}
           key: ${{ secrets.SERVER_SSH_KEY }}
-          # 将需要的变量显式传给远程 Shell
-          envs: APP_NAME,KEEP_RELEASES
+          envs: APP_NAME,KEEP_RELEASES,PRD_DIR
           script: |
             set -euo pipefail
             
-            # 从外部传入或计算
-            DEPLOY_DIR="${{ steps.target.outputs.DEPLOY_DIR }}"
-            RELEASE_TS="${{ steps.target.outputs.TS }}"
-            ENV_NAME="${{ steps.target.outputs.ENV_NAME }}"
-            RELEASE_PATH="$DEPLOY_DIR/releases/$RELEASE_TS"
-            FINAL_APP_NAME="$APP_NAME-$ENV_NAME"
+            RELEASE_TS="${{ steps.vars.outputs.TS }}"
+            RELEASE_PATH="$PRD_DIR/releases/$RELEASE_TS"
+            FINAL_APP_NAME="$APP_NAME-prd"
 
-            # 解压
+            # 1. 解压并安装生产依赖
             cd "$RELEASE_PATH"
             tar -xzf release.tar.gz && rm release.tar.gz
+            
+            echo "📦 Installing production dependencies..."
             npm ci --only=production
 
-            # 切换软链接 (Atomic switch)
-            ln -sfn "$RELEASE_PATH" "$DEPLOY_DIR/current"
+            # 2. 原子切换软链接
+            ln -sfn "$RELEASE_PATH" "$PRD_DIR/current"
 
-            # PM2 启动/重启
-            cd "$DEPLOY_DIR/current"
-            pm2 describe "$FINAL_APP_NAME" > /dev/null && pm2 reload "$FINAL_APP_NAME" || \
+            # 3. PM2 部署逻辑
+            cd "$PRD_DIR/current"
+            
+            # 停止并删除旧进程 (确保完全重载配置)
+            pm2 delete "$FINAL_APP_NAME" || true
+            
+            echo "🚀 Starting frontend with PM2..."
+            # 使用环境变量指定端口和生产模式
             NODE_ENV=production PORT=3000 pm2 start npm --name "$FINAL_APP_NAME" -- start
+            
             pm2 save
 
-            # 清理旧版本
-            cd "$DEPLOY_DIR/releases"
-            ls -1dt */ | tail -n +$(($KEEP_RELEASES + 1)) | xargs -r rm -rf
+            # 4. 清理旧版本
+            cd "$PRD_DIR/releases"
+            # 修补了之前的 ls 命令，确保只处理目录且不报错
+            ls -1dt */ | tail -n +$(($KEEP_RELEASES + 1)) | xargs -I {} rm -rf "{}"
+            
+            echo "🎉 Frontend Deployment Finished. Version: ${{ steps.vars.outputs.VERSION }}"
