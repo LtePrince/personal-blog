@@ -53,8 +53,9 @@ export default function LabPage() {
       <div className="h-24" />
 
       <main className="mx-auto grid max-w-6xl gap-6 px-5 py-8 lg:grid-cols-[280px_1fr]">
-        {/* Left column – server status */}
-        <div className="sticky top-24 self-start">
+        {/* Left column – server status (sticky only on desktop; on mobile it
+            scrolls normally so it can't overlap the project cards below it) */}
+        <div className="self-start lg:sticky lg:top-24">
           <ServerStatus/>
         </div>
 
