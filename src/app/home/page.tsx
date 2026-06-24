@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
 import type { BlogPost } from "@/types/blog";
+import type { Moment } from "@/types/moment";
 import { apiFetch } from "@/lib/api";
 import Navbar from "@/components/layout/Navbar";
 import LatestPosts from "@/components/home/LatestPosts";
+import Moments from "@/components/home/Moments";
 import ProfileCard from "@/components/home/ProfileCard";
 import AnnouncementCard from "@/components/home/AnnouncementCard";
 import SiteStats from "@/components/home/SiteStats";
@@ -26,12 +28,21 @@ async function getLatestPosts(): Promise<BlogPost[]> {
   return data;
 }
 
+/** Fetch the one-line personal moments timeline (newest first). */
+async function getMoments(): Promise<Moment[]> {
+  const data = await apiFetch<Moment[]>("moments", { cache: "no-store" });
+  return Array.isArray(data) ? data : [];
+}
+
 /* ------------------------------------------------------------------ */
 /*  Page                                                               */
 /* ------------------------------------------------------------------ */
 
 export default async function HomePage() {
-  const posts = await getLatestPosts();
+  const [posts, moments] = await Promise.all([
+    getLatestPosts(),
+    getMoments(),
+  ]);
 
   return (
     <>
@@ -41,8 +52,11 @@ export default async function HomePage() {
       <div className="h-24" />
 
       <main className="mx-auto grid max-w-6xl gap-6 px-5 py-8 md:grid-cols-[1fr_280px]">
-        {/* ---- Main column: Latest Posts ---- */}
-        <LatestPosts posts={posts} />
+        {/* ---- Main column: Latest Posts + Moments ---- */}
+        <div className="flex flex-col gap-6">
+          <LatestPosts posts={posts} />
+          <Moments items={moments} />
+        </div>
 
         {/* ---- Right sidebar ---- */}
         <div className="sticky top-24 flex flex-col gap-6 self-start">
