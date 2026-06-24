@@ -10,15 +10,10 @@ interface Stats {
 }
 
 /** Site launch date – used to compute uptime. */
-const SITE_LAUNCH_DATE = new Date("2025-02-01");
+const SITE_LAUNCH_DATE = new Date("2026-02-01");
 
 function daysSince(date: Date): number {
   return Math.floor((Date.now() - date.getTime()) / (1000 * 60 * 60 * 24));
-}
-
-function daysSinceLastUpdate(stats: Stats | null): string {
-  // Placeholder – will be replaced when backend provides last_updated
-  return "–";
 }
 
 interface StatItem {
@@ -34,6 +29,7 @@ interface StatItem {
 export default function SiteStats() {
   const { t } = useLocale();
   const [stats, setStats] = useState<Stats | null>(null);
+  const [lastPostDate, setLastPostDate] = useState<string | null>(null);
 
   useEffect(() => {
     fetch("/api/stats")
@@ -44,7 +40,21 @@ export default function SiteStats() {
         }
       })
       .catch(console.error);
+
+    // Most recent post date — backend returns recent posts ordered by date DESC.
+    fetch("/api/blog/recent?limit=1")
+      .then((res) => res.json())
+      .then((body) => {
+        if (body.success && body.data?.length > 0) {
+          setLastPostDate(body.data[0].date);
+        }
+      })
+      .catch(console.error);
   }, []);
+
+  const lastUpdatedDays = lastPostDate
+    ? daysSince(new Date(lastPostDate))
+    : null;
 
   const items: StatItem[] = [
     {
@@ -66,8 +76,8 @@ export default function SiteStats() {
     {
       icon: CalendarCheck,
       label: t({ en: "Last updated", "zh-CN": "最近更新" }),
-      value: daysSinceLastUpdate(stats),
-      unit: stats ? t({ en: " days ago", "zh-CN": " 天前" }) : undefined,
+      value: lastUpdatedDays ?? "–",
+      unit: lastUpdatedDays !== null ? t({ en: " days ago", "zh-CN": " 天前" }) : undefined,
     },
   ];
 
