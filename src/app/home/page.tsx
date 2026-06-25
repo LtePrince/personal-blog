@@ -30,7 +30,9 @@ async function getLatestPosts(): Promise<BlogPost[]> {
 
 /** Fetch the one-line personal moments timeline (newest first). */
 async function getMoments(): Promise<Moment[]> {
-  const data = await apiFetch<Moment[]>("moments", { cache: "no-store" });
+  const data = await apiFetch<Moment[]>("moments?limit=5", {
+    cache: "no-store",
+  });
   return Array.isArray(data) ? data : [];
 }
 

@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import type { DownstreamResponse } from "@/types/api";
 import type { Moment } from "@/types/moment";
 
@@ -12,7 +12,7 @@ interface MomentsData {
  * Proxies to backend GET /api/v1/moments and returns the timeline entries
  * (already sorted newest-first by the backend).
  */
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
     const backendUrl = process.env.BLOG_BACKEND_URL;
     if (!backendUrl) {
@@ -22,7 +22,9 @@ export async function GET() {
       );
     }
 
-    const response = await fetch(`${backendUrl}/api/v1/moments`, {
+    const { searchParams } = new URL(request.url);
+    const limit = searchParams.get("limit") || "5";
+    const response = await fetch(`${backendUrl}/api/v1/moments?limit=${limit}`, {
       cache: "no-store",
     });
     const result: DownstreamResponse<MomentsData> = await response.json();
