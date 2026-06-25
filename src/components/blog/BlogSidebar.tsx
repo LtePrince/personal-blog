@@ -12,10 +12,9 @@ interface RecentPost {
   date: string;
 }
 
-interface TagItem {
-  id: number;
+interface MergedTag {
   name: string;
-  postCount: number;
+  count: number;
 }
 
 interface BlogSidebarProps {
@@ -25,12 +24,12 @@ interface BlogSidebarProps {
 
 /**
  * Thin sidebar shown next to the blog list.
- * Fetches recent posts and tags from the backend.
+ * Fetches recent posts and the merged tag set (posts + columns).
  */
 export default function BlogSidebar({ onTagClick }: BlogSidebarProps) {
   const { t } = useLocale();
   const [recentPosts, setRecentPosts] = useState<RecentPost[]>([]);
-  const [tags, setTags] = useState<TagItem[]>([]);
+  const [tags, setTags] = useState<MergedTag[]>([]);
   const [loadingRecent, setLoadingRecent] = useState(true);
   const [loadingTags, setLoadingTags] = useState(true);
 
@@ -51,15 +50,32 @@ export default function BlogSidebar({ onTagClick }: BlogSidebarProps) {
     })();
   }, []);
 
-  /* Fetch tags */
+  /* Fetch all tags (posts + columns, merged by name) */
   useEffect(() => {
     (async () => {
       try {
-        const res = await fetch("/api/tags");
-        const body = await res.json();
-        if (body.success && body.data) {
-          setTags(body.data);
+        const [tRes, cRes] = await Promise.all([
+          fetch("/api/tags"),
+          fetch("/api/columns/tags"),
+        ]);
+        const [tBody, cBody] = await Promise.all([tRes.json(), cRes.json()]);
+
+        const map = new Map<string, number>();
+        if (tBody.success) {
+          for (const tag of tBody.data ?? []) {
+            map.set(tag.name, (map.get(tag.name) ?? 0) + (tag.postCount ?? 0));
+          }
         }
+        if (cBody.success) {
+          for (const c of cBody.data ?? []) {
+            map.set(c.name, (map.get(c.name) ?? 0) + (c.columnCount ?? 0));
+          }
+        }
+        setTags(
+          [...map.entries()]
+            .map(([name, count]) => ({ name, count }))
+            .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name)),
+        );
       } catch (err) {
         console.error("Failed to fetch tags:", err);
       } finally {
@@ -109,7 +125,7 @@ export default function BlogSidebar({ onTagClick }: BlogSidebarProps) {
         )}
       </div>
 
-      {/* Tags cloud */}
+      {/* Tags cloud — all tags (posts + columns) */}
       <div className="glass rounded-[var(--radius-lg)] px-5 py-5">
         <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold text-[var(--text-primary)]">
           <Tags className="h-4 w-4 text-[var(--accent)]" />
@@ -125,14 +141,12 @@ export default function BlogSidebar({ onTagClick }: BlogSidebarProps) {
           <div className="flex flex-wrap gap-2">
             {tags.map((tag) => (
               <button
-                key={tag.id}
+                key={tag.name}
                 onClick={() => onTagClick?.(tag.name)}
-                className="inline-flex items-center gap-1 rounded-full bg-[var(--accent-subtle)] px-3 py-1 text-xs font-medium text-[var(--accent)] transition-colors hover:bg-[var(--accent)] hover:text-white cursor-pointer"
+                className="inline-flex cursor-pointer items-center gap-1 rounded-full bg-[var(--accent-subtle)] px-3 py-1 text-xs font-medium text-[var(--accent)] transition-colors hover:bg-[var(--accent)] hover:text-white"
               >
                 {tag.name}
-                <span className="text-[0.625rem] opacity-70">
-                  {tag.postCount}
-                </span>
+                <span className="text-[0.625rem] opacity-70">{tag.count}</span>
               </button>
             ))}
           </div>

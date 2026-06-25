@@ -2,19 +2,28 @@
 
 import { useEffect, useRef, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { Search, X, Command, Loader2, Tag } from "lucide-react";
+import {
+  Search,
+  X,
+  Command,
+  Loader2,
+  Tag,
+  FileText,
+  Layers,
+} from "lucide-react";
 import type { BlogPost } from "@/types/blog";
+import type { ColumnItem } from "@/types/column";
 import { parseTags } from "@/types/blog";
 import { cn } from "@/lib/utils";
+import { useLocale } from "@/contexts/LocaleContext";
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
 /* ------------------------------------------------------------------ */
 
-interface TagItem {
-  id: number;
+interface MergedTag {
   name: string;
-  postCount: number;
+  count: number;
 }
 
 interface SearchModalProps {
@@ -25,12 +34,16 @@ interface SearchModalProps {
 }
 
 /* ------------------------------------------------------------------ */
-/*  Custom hook: debounced backend search                              */
+/*  Hook: unified debounced search across posts + columns              */
 /* ------------------------------------------------------------------ */
 
-function useSearch(query: string, selectedTags: string[], open: boolean) {
-  const [results, setResults] = useState<BlogPost[]>([]);
-  const [total, setTotal] = useState(0);
+function useUnifiedSearch(
+  query: string,
+  selectedTags: string[],
+  open: boolean,
+) {
+  const [posts, setPosts] = useState<BlogPost[]>([]);
+  const [columns, setColumns] = useState<ColumnItem[]>([]);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -38,11 +51,9 @@ function useSearch(query: string, selectedTags: string[], open: boolean) {
 
     const hasQuery = query.trim().length > 0;
     const hasTags = selectedTags.length > 0;
-
-    // Nothing to search — clear results.
     if (!hasQuery && !hasTags) {
-      setResults([]);
-      setTotal(0);
+      setPosts([]);
+      setColumns([]);
       return;
     }
 
@@ -51,27 +62,28 @@ function useSearch(query: string, selectedTags: string[], open: boolean) {
 
     const timer = setTimeout(async () => {
       try {
-        const params = new URLSearchParams({
-          page_no: "1",
-          page_size: "20",
-        });
+        const params = new URLSearchParams({ page_no: "1", page_size: "10" });
         if (hasQuery) params.set("filter_title", query.trim());
         if (hasTags) params.set("filter_tag", selectedTags[0]);
 
-        const res = await fetch(`/api/blog?${params.toString()}`, {
-          signal: controller.signal,
-        });
-        const body = await res.json();
-        if (body.success) {
-          setResults(body.data ?? []);
-          setTotal(body.total ?? 0);
-        }
+        const [blogRes, colRes] = await Promise.all([
+          fetch(`/api/blog?${params.toString()}`, { signal: controller.signal }),
+          fetch(`/api/columns?${params.toString()}`, {
+            signal: controller.signal,
+          }),
+        ]);
+        const [blogBody, colBody] = await Promise.all([
+          blogRes.json(),
+          colRes.json(),
+        ]);
+        setPosts(blogBody.success ? (blogBody.data ?? []) : []);
+        setColumns(colBody.success ? (colBody.data ?? []) : []);
       } catch {
         /* abort or network error — ignore */
       } finally {
         setLoading(false);
       }
-    }, 300); // 300ms debounce
+    }, 300);
 
     return () => {
       clearTimeout(timer);
@@ -79,15 +91,15 @@ function useSearch(query: string, selectedTags: string[], open: boolean) {
     };
   }, [query, selectedTags, open]);
 
-  return { results, total, loading };
+  return { posts, columns, loading };
 }
 
 /* ------------------------------------------------------------------ */
-/*  Custom hook: fetch available tags                                   */
+/*  Hook: merged post + column tags                                    */
 /* ------------------------------------------------------------------ */
 
-function useTags(open: boolean) {
-  const [tags, setTags] = useState<TagItem[]>([]);
+function useMergedTags(open: boolean) {
+  const [tags, setTags] = useState<MergedTag[]>([]);
 
   useEffect(() => {
     if (!open) return;
@@ -95,10 +107,29 @@ function useTags(open: boolean) {
 
     (async () => {
       try {
-        const res = await fetch("/api/tags");
-        const body = await res.json();
-        if (!cancelled && body.success) {
-          setTags(body.data ?? []);
+        const [tRes, cRes] = await Promise.all([
+          fetch("/api/tags"),
+          fetch("/api/columns/tags"),
+        ]);
+        const [tBody, cBody] = await Promise.all([tRes.json(), cRes.json()]);
+
+        const map = new Map<string, number>();
+        if (tBody.success) {
+          for (const t of tBody.data ?? []) {
+            map.set(t.name, (map.get(t.name) ?? 0) + (t.postCount ?? 0));
+          }
+        }
+        if (cBody.success) {
+          for (const c of cBody.data ?? []) {
+            map.set(c.name, (map.get(c.name) ?? 0) + (c.columnCount ?? 0));
+          }
+        }
+        if (!cancelled) {
+          setTags(
+            [...map.entries()]
+              .map(([name, count]) => ({ name, count }))
+              .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name)),
+          );
         }
       } catch {
         /* ignore */
@@ -114,12 +145,12 @@ function useTags(open: boolean) {
 }
 
 /* ------------------------------------------------------------------ */
-/*  SearchModal component                                              */
+/*  SearchModal                                                        */
 /* ------------------------------------------------------------------ */
 
 /**
- * Full-screen search overlay with backend-powered title search and
- * clickable tag filters. Triggered by Ctrl+K or the search bar.
+ * Full-screen unified search overlay. One box searches both blog posts and
+ * columns; results are grouped by type. Tag filters span both content types.
  */
 export default function SearchModal({
   open,
@@ -127,22 +158,26 @@ export default function SearchModal({
   initialTag,
 }: SearchModalProps) {
   const router = useRouter();
+  const { t } = useLocale();
   const inputRef = useRef<HTMLInputElement>(null);
 
   const [query, setQuery] = useState("");
-  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [selectedTags, setSelectedTags] = useState<string[]>(
+    initialTag ? [initialTag] : [],
+  );
 
-  const { results, total, loading } = useSearch(query, selectedTags, open);
-  const allTags = useTags(open);
+  const { posts, columns, loading } = useUnifiedSearch(
+    query,
+    selectedTags,
+    open,
+  );
+  const allTags = useMergedTags(open);
 
-  /* Reset state when modal opens; apply initialTag if provided */
+  /* Focus the input on mount (the modal is mounted fresh each time it opens). */
   useEffect(() => {
-    if (open) {
-      setQuery("");
-      setSelectedTags(initialTag ? [initialTag] : []);
-      requestAnimationFrame(() => inputRef.current?.focus());
-    }
-  }, [open, initialTag]);
+    const id = requestAnimationFrame(() => inputRef.current?.focus());
+    return () => cancelAnimationFrame(id);
+  }, []);
 
   /* Escape to close */
   useEffect(() => {
@@ -163,20 +198,22 @@ export default function SearchModal({
   }, [open]);
 
   const go = useCallback(
-    (id: string) => {
+    (path: string) => {
       onClose();
-      router.push(`/blog/${encodeURIComponent(id)}`);
+      router.push(path);
     },
     [onClose, router],
   );
 
   const toggleTag = useCallback((name: string) => {
     setSelectedTags((prev) =>
-      prev.includes(name) ? prev.filter((t) => t !== name) : [name],
+      prev.includes(name) ? prev.filter((x) => x !== name) : [name],
     );
   }, []);
 
   const hasInput = query.trim().length > 0 || selectedTags.length > 0;
+  const noResults =
+    !loading && hasInput && posts.length === 0 && columns.length === 0;
 
   if (!open) return null;
 
@@ -195,7 +232,6 @@ export default function SearchModal({
         <div className="flex items-center gap-3 border-b border-[var(--border-glass)] pb-3">
           <Search className="h-5 w-5 shrink-0 text-[var(--text-tertiary)]" />
           <div className="flex flex-1 flex-wrap items-center gap-1.5">
-            {/* Selected tag chips inside the input area */}
             {selectedTags.map((tag) => (
               <span
                 key={tag}
@@ -216,11 +252,10 @@ export default function SearchModal({
               ref={inputRef}
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder={
-                selectedTags.length > 0
-                  ? "Filter by title…"
-                  : "Search posts…"
-              }
+              placeholder={t({
+                en: "Search posts & columns…",
+                "zh-CN": "搜索文章与专栏…",
+              })}
               className="min-w-[120px] flex-1 bg-transparent text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none"
             />
           </div>
@@ -233,14 +268,14 @@ export default function SearchModal({
           </button>
         </div>
 
-        {/* Tag pills – always visible when tags exist */}
+        {/* Tag pills (merged post + column tags) */}
         {allTags.length > 0 && (
           <div className="flex flex-wrap gap-1.5 border-b border-[var(--border-glass)] py-2.5">
             {allTags.map((tag) => {
               const active = selectedTags.includes(tag.name);
               return (
                 <button
-                  key={tag.id}
+                  key={tag.name}
                   onClick={() => toggleTag(tag.name)}
                   className={cn(
                     "inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium transition-colors",
@@ -256,7 +291,7 @@ export default function SearchModal({
                       active ? "opacity-80" : "opacity-60",
                     )}
                   >
-                    {tag.postCount}
+                    {tag.count}
                   </span>
                 </button>
               );
@@ -265,64 +300,111 @@ export default function SearchModal({
         )}
 
         {/* Results */}
-        <ul className="mt-3 max-h-[40vh] overflow-y-auto">
-          {/* Loading */}
+        <div className="mt-3 max-h-[44vh] overflow-y-auto">
           {loading && (
-            <li className="flex items-center justify-center gap-2 py-6 text-sm text-[var(--text-tertiary)]">
+            <div className="flex items-center justify-center gap-2 py-6 text-sm text-[var(--text-tertiary)]">
               <Loader2 className="h-4 w-4 animate-spin" />
-              Searching…
-            </li>
+              {t({ en: "Searching…", "zh-CN": "搜索中…" })}
+            </div>
           )}
 
-          {/* No results */}
-          {!loading && hasInput && results.length === 0 && (
-            <li className="py-6 text-center text-sm text-[var(--text-tertiary)]">
-              No results found.
-            </li>
+          {noResults && (
+            <div className="py-6 text-center text-sm text-[var(--text-tertiary)]">
+              {t({ en: "No results found.", "zh-CN": "没有找到结果。" })}
+            </div>
           )}
 
-          {/* Result list */}
-          {!loading &&
-            results.map((post) => {
-              const postTags = parseTags(post.tags);
-              return (
-                <li key={post.id}>
-                  <button
-                    onClick={() => go(post.id)}
-                    className="flex w-full flex-col gap-1 rounded-[var(--radius-sm)] px-3 py-2.5 text-left transition-colors hover:bg-[var(--accent-subtle)]"
-                  >
-                    <span className="text-sm font-medium text-[var(--text-primary)]">
-                      {post.title}
-                    </span>
-                    {post.summary && (
-                      <span className="line-clamp-1 text-xs text-[var(--text-tertiary)]">
-                        {post.summary}
-                      </span>
-                    )}
-                    {postTags.length > 0 && (
-                      <div className="flex flex-wrap gap-1 mt-0.5">
-                        {postTags.map((t) => (
-                          <span
-                            key={t}
-                            className="rounded-full bg-[var(--accent-subtle)] px-2 py-0.5 text-[0.625rem] text-[var(--accent)]"
-                          >
-                            {t}
+          {/* Posts group */}
+          {!loading && posts.length > 0 && (
+            <section className="mb-2">
+              <h4 className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold uppercase tracking-wide text-[var(--text-tertiary)]">
+                <FileText className="h-3.5 w-3.5" />
+                {t({ en: "Posts", "zh-CN": "文章" })}
+              </h4>
+              <ul>
+                {posts.map((post) => {
+                  const tags = parseTags(post.tags);
+                  return (
+                    <li key={`p-${post.id}`}>
+                      <button
+                        onClick={() => go(`/blog/${encodeURIComponent(post.id)}`)}
+                        className="flex w-full flex-col gap-1 rounded-[var(--radius-sm)] px-3 py-2.5 text-left transition-colors hover:bg-[var(--accent-subtle)]"
+                      >
+                        <span className="text-sm font-medium text-[var(--text-primary)]">
+                          {post.title}
+                        </span>
+                        {post.summary && (
+                          <span className="line-clamp-1 text-xs text-[var(--text-tertiary)]">
+                            {post.summary}
                           </span>
-                        ))}
-                      </div>
-                    )}
-                  </button>
-                </li>
-              );
-            })}
-
-          {/* Result count hint */}
-          {!loading && results.length > 0 && total > results.length && (
-            <li className="py-2 text-center text-xs text-[var(--text-tertiary)]">
-              Showing {results.length} of {total} results
-            </li>
+                        )}
+                        {tags.length > 0 && (
+                          <div className="mt-0.5 flex flex-wrap gap-1">
+                            {tags.map((tg) => (
+                              <span
+                                key={tg}
+                                className="rounded-full bg-[var(--accent-subtle)] px-2 py-0.5 text-[0.625rem] text-[var(--accent)]"
+                              >
+                                {tg}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            </section>
           )}
-        </ul>
+
+          {/* Columns group */}
+          {!loading && columns.length > 0 && (
+            <section>
+              <h4 className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold uppercase tracking-wide text-[var(--text-tertiary)]">
+                <Layers className="h-3.5 w-3.5" />
+                {t({ en: "Columns", "zh-CN": "专栏" })}
+              </h4>
+              <ul>
+                {columns.map((col) => (
+                  <li key={`c-${col.id}`}>
+                    <button
+                      onClick={() => go(`/column/${encodeURIComponent(col.slug)}`)}
+                      className="flex w-full flex-col gap-1 rounded-[var(--radius-sm)] px-3 py-2.5 text-left transition-colors hover:bg-[var(--accent-subtle)]"
+                    >
+                      <span className="flex items-center gap-2 text-sm font-medium text-[var(--text-primary)]">
+                        {col.title}
+                        <span className="text-[0.625rem] font-normal text-[var(--text-tertiary)]">
+                          {t({
+                            en: `${col.chapterCount} ch.`,
+                            "zh-CN": `${col.chapterCount} 章`,
+                          })}
+                        </span>
+                      </span>
+                      {col.summary && (
+                        <span className="line-clamp-1 text-xs text-[var(--text-tertiary)]">
+                          {col.summary}
+                        </span>
+                      )}
+                      {col.tags.length > 0 && (
+                        <div className="mt-0.5 flex flex-wrap gap-1">
+                          {col.tags.map((tg) => (
+                            <span
+                              key={tg}
+                              className="rounded-full bg-[var(--accent-subtle)] px-2 py-0.5 text-[0.625rem] text-[var(--accent)]"
+                            >
+                              {tg}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -337,6 +419,7 @@ interface SearchTriggerProps {
 }
 
 export function SearchTrigger({ onClick }: SearchTriggerProps) {
+  const { t } = useLocale();
   return (
     <button
       onClick={onClick}
@@ -347,7 +430,9 @@ export function SearchTrigger({ onClick }: SearchTriggerProps) {
       )}
     >
       <Search className="h-4 w-4 shrink-0" />
-      <span className="flex-1 text-left">Search posts…</span>
+      <span className="flex-1 text-left">
+        {t({ en: "Search posts & columns…", "zh-CN": "搜索文章与专栏…" })}
+      </span>
       <kbd className="hidden items-center gap-0.5 rounded-md border border-[var(--border-glass)] bg-[var(--bg-glass)] px-1.5 py-0.5 text-xs font-medium text-[var(--text-tertiary)] sm:inline-flex">
         <Command className="h-3 w-3" />K
       </kbd>
