@@ -39,6 +39,8 @@ export async function GET(
         tags: item.tags && item.tags.length > 0 ? item.tags : undefined,
         cover: item.cover || undefined,
         author: item.author || undefined,
+        createdAt: item.created_at,
+        updatedAt: item.updated_at,
         text: item.text,
       };
 

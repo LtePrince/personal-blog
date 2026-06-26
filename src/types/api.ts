@@ -32,6 +32,8 @@ export interface BackendBlogItem {
   tags?: string[];
   cover?: string;
   author?: string;
+  created_at?: number;
+  updated_at?: number;
 }
 
 /** Full blog detail as returned by backend. */

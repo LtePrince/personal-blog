@@ -7,6 +7,9 @@ export interface BlogPost {
   tags?: string | string[];
   cover?: string;
   author?: string;
+  /** DB timestamps (unix seconds): first publish & last metadata update. */
+  createdAt?: number;
+  updatedAt?: number;
 }
 
 /** Full blog post detail including body text. */

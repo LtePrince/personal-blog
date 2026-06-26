@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import type { BlogPostDetail } from "@/types/blog";
 import { parseTags } from "@/types/blog";
+import { useLocale } from "@/contexts/LocaleContext";
 import Navbar from "@/components/layout/Navbar";
 import Markdown from "@/components/common/Markdown";
 import Comments from "@/components/common/Comments";
@@ -18,6 +19,17 @@ interface ClientDetailProps {
  */
 export default function ClientDetail({ data }: ClientDetailProps) {
   const router = useRouter();
+  const { t } = useLocale();
+
+  const fmtDate = (s: number) => new Date(s * 1000).toISOString().slice(0, 10);
+  // Only show "updated" when it was actually changed after first publish.
+  const updatedLabel =
+    data.updatedAt && data.createdAt && data.updatedAt - data.createdAt > 60
+      ? t({
+          en: `Updated ${fmtDate(data.updatedAt)}`,
+          "zh-CN": `更新于 ${fmtDate(data.updatedAt)}`,
+        })
+      : "";
 
   return (
     <>
@@ -42,6 +54,7 @@ export default function ClientDetail({ data }: ClientDetailProps) {
             </h1>
             <p className="mt-2 text-sm text-[var(--text-tertiary)]">
               {data.date}
+              {updatedLabel ? ` · ${updatedLabel}` : ""}
               {data.author ? ` · ${data.author}` : ""}
             </p>
             {data.tags && data.tags.length > 0 && (
