@@ -126,11 +126,7 @@ export default function Navbar() {
               aria-label="Toggle menu"
               aria-expanded={menuOpen}
             >
-              {menuOpen ? (
-                <X className="h-5 w-5" />
-              ) : (
-                <Menu className="h-5 w-5" />
-              )}
+              <Menu className="h-5 w-5" />
             </button>
           </div>
         </nav>
@@ -154,6 +150,15 @@ export default function Navbar() {
           menuOpen ? "translate-x-0" : "translate-x-full",
         )}
       >
+        {/* Close button (lives inside the panel so it sits above it) */}
+        <button
+          onClick={closeMobileMenu}
+          className="absolute right-4 top-5 inline-flex h-9 w-9 items-center justify-center rounded-lg text-[var(--text-secondary)] transition-colors hover:bg-[var(--accent-subtle)] hover:text-[var(--text-primary)]"
+          aria-label="Close menu"
+        >
+          <X className="h-5 w-5" />
+        </button>
+
         {siteConfig.navLinks.map((link) => (
           <Link
             key={link.href}
