@@ -34,6 +34,24 @@ const projects: Project[] = [
   },
   {
     id: "3",
+    title: "AudioLab",
+    description:
+      "Audio-conditioned diffusion model that generates Phigros 4-key charts, pairing a 1D DiT with a latent VAE and a multi-scale audio encoder.",
+    href: "https://github.com/LtePrince/AudioLab",
+    tags: ["PyTorch", "Diffusion", "Audio"],
+    icon: "🎵",
+  },
+  {
+    id: "4",
+    title: "FusionWAM",
+    description:
+      "Tri-expert manipulation model fusing a PaliGemma VLM, a Wan2.2 video dynamics DiT and a flow-matching action expert that attends over both.",
+    href: "https://github.com/LtePrince/FusionWAM",
+    tags: ["PyTorch", "VLA", "Robotics"],
+    icon: "🤖",
+  },
+  {
+    id: "5",
     title: "More Coming…",
     description:
       "Stay tuned! More projects and experiments are on the way.",
