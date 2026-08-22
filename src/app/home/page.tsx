@@ -19,7 +19,7 @@ export const metadata: Metadata = {
 /** SSR – keep content fresh on every request. */
 export const dynamic = "force-dynamic";
 
-const LATEST_LIMIT = 5;
+const LATEST_LIMIT = 10;
 
 /**
  * Build the latest feed: recent blog posts merged with every column chapter,
