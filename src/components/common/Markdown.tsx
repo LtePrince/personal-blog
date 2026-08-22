@@ -2,8 +2,11 @@
 
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import remarkMath from "remark-math";
+import rehypeKatex from "rehype-katex";
 import rehypeSanitize, { defaultSchema } from "rehype-sanitize";
 import rehypeSlug from "rehype-slug";
+import "katex/dist/katex.min.css";
 
 // Allow `id` attribute on heading elements so rehype-slug anchors survive sanitisation.
 const sanitizeSchema = {
@@ -24,13 +27,19 @@ interface MarkdownProps {
 }
 
 /**
- * Render Markdown with GFM support, heading anchors, and HTML sanitisation.
+ * Render Markdown with GFM support, LaTeX math, heading anchors, and HTML
+ * sanitisation.
  */
 export default function Markdown({ children }: MarkdownProps) {
   return (
     <ReactMarkdown
-      remarkPlugins={[remarkGfm]}
-      rehypePlugins={[rehypeSlug, [rehypeSanitize, sanitizeSchema]]}
+      remarkPlugins={[remarkGfm, remarkMath]}
+      // rehype-katex has to run *after* rehype-sanitize. Run it before, and
+      // the sanitiser strips KaTeX's class names and MathML attributes, which
+      // renders every formula as duplicated plain text ("x∈Rnx \in \mathbb{R}^n").
+      // Sanitising first is safe: KaTeX builds its own markup from the TeX
+      // source and emits no raw HTML at default settings.
+      rehypePlugins={[rehypeSlug, [rehypeSanitize, sanitizeSchema], rehypeKatex]}
       components={{
         // Blog title is already shown in the page header, skip h1 in body.
         h1: () => null,
