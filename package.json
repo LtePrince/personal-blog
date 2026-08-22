@@ -11,7 +11,7 @@
   "dependencies": {
     "@giscus/react": "^3.1.0",
     "clsx": "^2.1.1",
-    "katex": "^0.18.4",
+    "katex": "^0.16.47",
     "lucide-react": "^0.564.0",
     "next": "16.1.6",
     "react": "19.2.3",
