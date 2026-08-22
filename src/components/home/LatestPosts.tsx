@@ -1,23 +1,24 @@
 "use client";
 
 import { BookOpen } from "lucide-react";
-import type { BlogPost } from "@/types/blog";
-import BlogCard from "./BlogCard";
+import type { FeedItem } from "@/types/feed";
+import FeedCard from "./FeedCard";
 import { Skeleton } from "@/components/common/Skeleton";
 import { useLocale } from "@/contexts/LocaleContext";
 
 interface LatestPostsProps {
-  posts: BlogPost[];
+  items: FeedItem[];
 }
 
 /**
- * "Latest Blog" section – shows up to 5 most recent posts.
+ * "Latest Posts" section – the 5 newest entries across blog posts and
+ * column chapters.
  *
  * When the array is empty (API down / loading) it renders skeletons.
  */
-export default function LatestPosts({ posts }: LatestPostsProps) {
+export default function LatestPosts({ items }: LatestPostsProps) {
   const { t } = useLocale();
-  const hasData = posts.length > 0;
+  const hasData = items.length > 0;
 
   return (
     <section className="flex flex-col gap-4">
@@ -30,8 +31,8 @@ export default function LatestPosts({ posts }: LatestPostsProps) {
       {/* Post list or skeleton fallback */}
       <div className="flex flex-col gap-3">
         {hasData
-          ? posts.map((post, i) => (
-              <BlogCard key={post.id} post={post} index={i} />
+          ? items.map((item, i) => (
+              <FeedCard key={item.key} item={item} index={i} />
             ))
           : Array.from({ length: 5 }).map((_, i) => (
               <div

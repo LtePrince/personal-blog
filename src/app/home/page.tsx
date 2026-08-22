@@ -1,7 +1,10 @@
 import type { Metadata } from "next";
 import type { BlogPost } from "@/types/blog";
+import type { ColumnItem, ColumnDetail } from "@/types/column";
+import type { FeedItem } from "@/types/feed";
 import type { Moment } from "@/types/moment";
 import { apiFetch } from "@/lib/api";
+import { buildFeed } from "@/lib/feed";
 import Navbar from "@/components/layout/Navbar";
 import LatestPosts from "@/components/home/LatestPosts";
 import Moments from "@/components/home/Moments";
@@ -16,16 +19,34 @@ export const metadata: Metadata = {
 /** SSR – keep content fresh on every request. */
 export const dynamic = "force-dynamic";
 
+const LATEST_LIMIT = 5;
+
 /**
- * Fetch the 5 most recent blog posts from the backend.
- * Returns an empty array when the API is unreachable.
+ * Build the latest feed: recent blog posts merged with every column chapter,
+ * newest first. Each source degrades to empty when its API is unreachable, so
+ * one being down still leaves the other on the page.
  */
-async function getLatestPosts(): Promise<BlogPost[]> {
-  const data = await apiFetch<BlogPost[]>("blog/recent?limit=5", {
-    cache: "no-store",
-  });
-  if (!Array.isArray(data)) return [];
-  return data;
+async function getLatestFeed(): Promise<FeedItem[]> {
+  const [posts, columns] = await Promise.all([
+    apiFetch<BlogPost[]>(`blog/recent?limit=${LATEST_LIMIT}`, { cache: "no-store" }),
+    apiFetch<ColumnItem[]>("columns?page_size=100", { cache: "no-store" }),
+  ]);
+
+  // The list endpoint carries chapter counts, not the chapters themselves, so
+  // each column needs its detail fetched to expand into per-chapter entries.
+  const details = await Promise.all(
+    (columns ?? []).map((c) =>
+      apiFetch<ColumnDetail>(`columns/${encodeURIComponent(c.slug)}`, {
+        cache: "no-store",
+      }),
+    ),
+  );
+
+  return buildFeed(
+    Array.isArray(posts) ? posts : [],
+    details.filter((d): d is ColumnDetail => d !== null),
+    LATEST_LIMIT,
+  );
 }
 
 /** Fetch the one-line personal moments timeline (newest first). */
@@ -41,8 +62,8 @@ async function getMoments(): Promise<Moment[]> {
 /* ------------------------------------------------------------------ */
 
 export default async function HomePage() {
-  const [posts, moments] = await Promise.all([
-    getLatestPosts(),
+  const [feed, moments] = await Promise.all([
+    getLatestFeed(),
     getMoments(),
   ]);
 
@@ -56,7 +77,7 @@ export default async function HomePage() {
       <main className="mx-auto grid max-w-6xl gap-6 px-5 py-8 md:grid-cols-[1fr_280px]">
         {/* ---- Main column: Latest Posts + Moments ---- */}
         <div className="flex flex-col gap-6">
-          <LatestPosts posts={posts} />
+          <LatestPosts items={feed} />
           <Moments items={moments} />
         </div>
 
