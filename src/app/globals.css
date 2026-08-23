@@ -358,6 +358,17 @@ body::after {
   padding-block: 0.25em;
 }
 
+/* Wide *inline* maths cannot be given its own scroll row: making the .katex
+   span a scroll container would move its baseline to the bottom edge and
+   drop every inline formula below the surrounding text. Scrolling the
+   paragraph instead leaves baselines untouched, and only ever engages when
+   something unbreakable inside it is too wide — measured on the real chapter
+   at 390px, this is what takes the page's own horizontal overflow from 97px
+   to 0. */
+.prose p {
+  overflow-x: auto;
+}
+
 /* Step maths down a little on phones so more of it fits without swiping. */
 @media (max-width: 640px) {
   .prose .katex-display {
