@@ -341,3 +341,26 @@ body::after {
   border-radius: var(--radius-md);
   margin: 1em 0;
 }
+
+/* ---- Display math ---------------------------------------------------- */
+
+/* A formula can be far wider than a phone screen. Let it scroll in its own
+   row — the same treatment .prose pre already gets — rather than spilling
+   out of the card.
+   Centring with text-align would put half the overflow to the *left*, where
+   the scroll region cannot reach it; a flex row with `safe` centring keeps
+   the formula centred while it fits and falls back to the start once it
+   does not. */
+.prose .katex-display {
+  display: flex;
+  justify-content: safe center;
+  overflow-x: auto;
+  padding-block: 0.25em;
+}
+
+/* Step maths down a little on phones so more of it fits without swiping. */
+@media (max-width: 640px) {
+  .prose .katex-display {
+    font-size: 0.9em;
+  }
+}
