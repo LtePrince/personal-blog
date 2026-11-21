@@ -9,32 +9,26 @@ import { fmtUnixDate } from "@/lib/columns";
 /** Ordering key for a post: prefer the DB timestamp, fall back to the
  *  authored date when the API omits it. */
 function postSortAt(post: BlogPost): number {
+  if (post.updatedAt) return post.updatedAt;
   if (post.createdAt) return post.createdAt;
   const parsed = Date.parse(post.date);
   return Number.isNaN(parsed) ? 0 : Math.floor(parsed / 1000);
 }
 
 export function postToFeedItem(post: BlogPost): FeedItem {
+  const sortAt = postSortAt(post);
   return {
     key: `post-${post.id}`,
     kind: "post",
     href: `/blog/${encodeURIComponent(post.id)}`,
     title: post.title,
     summary: post.summary,
-    date: post.date,
-    sortAt: postSortAt(post),
+    date: fmtUnixDate(sortAt) || post.date,
+    sortAt,
     tags: parseTags(post.tags),
   };
 }
 
-/**
- * One feed entry per chapter.
- *
- * Chapters carry no timestamp of their own worth using — the backend deletes
- * and recreates the whole chapter set on every publish — so they inherit the
- * column's last-updated time. Sharing a timestamp is fine: Array.sort is
- * stable, so chapters keep their table-of-contents order within a column.
- */
 export function columnToFeedItems(col: ColumnDetail): FeedItem[] {
   return col.chapters.map((ch) => ({
     key: `chapter-${col.slug}-${ch.slug}`,
@@ -42,8 +36,8 @@ export function columnToFeedItems(col: ColumnDetail): FeedItem[] {
     href: `/column/${encodeURIComponent(col.slug)}/${encodeURIComponent(ch.slug)}`,
     title: ch.title,
     summary: col.summary,
-    date: fmtUnixDate(col.updatedAt),
-    sortAt: col.updatedAt,
+    date: fmtUnixDate(ch.updatedAt ?? col.updatedAt),
+    sortAt: ch.updatedAt ?? col.updatedAt,
     tags: col.tags,
     columnTitle: col.title,
   }));

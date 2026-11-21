@@ -15,6 +15,7 @@ export interface ColumnItem {
 
 /** A chapter entry in a column's table of contents. */
 export interface ChapterItem {
+  updatedAt?: number;
   slug: string;
   title: string;
 }

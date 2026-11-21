@@ -19,6 +19,7 @@ export interface BackendChapterItem {
   slug: string;
   title: string;
   sort: number;
+  updated_at?: number;
 }
 
 export interface BackendColumnDetail extends BackendColumnItem {
@@ -53,14 +54,14 @@ export function toColumnItem(b: BackendColumnItem): ColumnItem {
 export function toColumnDetail(b: BackendColumnDetail): ColumnDetail {
   return {
     ...toColumnItem(b),
-    chapters: b.chapters.map((c) => ({ slug: c.slug, title: c.title })),
+    chapters: b.chapters.map((c) => ({ slug: c.slug, title: c.title, updatedAt: c.updated_at })),
   };
 }
 
 export function toChapterView(b: BackendChapterView): ChapterView {
   return {
     column: toColumnItem(b.column),
-    chapters: b.chapters.map((c) => ({ slug: c.slug, title: c.title })),
+    chapters: b.chapters.map((c) => ({ slug: c.slug, title: c.title, updatedAt: c.updated_at })),
     current: {
       slug: b.current.slug,
       title: b.current.title,
