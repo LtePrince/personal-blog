@@ -1,12 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { FileText, Tags, Clock, CalendarCheck, BarChart3 } from "lucide-react";
+import { FileText, Layers, Tags, Clock, CalendarCheck, BarChart3 } from "lucide-react";
 import { useLocale } from "@/contexts/LocaleContext";
 
 interface Stats {
   postCount: number;
+  columnCount: number;
   tagCount: number;
+  lastUpdatedAt: number;
 }
 
 /** Site launch date – used to compute uptime. */
@@ -29,7 +31,6 @@ interface StatItem {
 export default function SiteStats() {
   const { t } = useLocale();
   const [stats, setStats] = useState<Stats | null>(null);
-  const [lastPostDate, setLastPostDate] = useState<string | null>(null);
 
   useEffect(() => {
     fetch("/api/stats")
@@ -40,20 +41,10 @@ export default function SiteStats() {
         }
       })
       .catch(console.error);
-
-    // Most recent post date — backend returns recent posts ordered by date DESC.
-    fetch("/api/blog/recent?limit=1")
-      .then((res) => res.json())
-      .then((body) => {
-        if (body.success && body.data?.length > 0) {
-          setLastPostDate(body.data[0].date);
-        }
-      })
-      .catch(console.error);
   }, []);
 
-  const lastUpdatedDays = lastPostDate
-    ? daysSince(new Date(lastPostDate))
+  const lastUpdatedDays = stats?.lastUpdatedAt
+    ? Math.max(0, daysSince(new Date(stats.lastUpdatedAt * 1000)))
     : null;
 
   const items: StatItem[] = [
@@ -61,6 +52,11 @@ export default function SiteStats() {
       icon: FileText,
       label: t({ en: "Posts", "zh-CN": "文章" }),
       value: stats?.postCount ?? "–",
+    },
+    {
+      icon: Layers,
+      label: t({ en: "Columns", "zh-CN": "专栏" }),
+      value: stats?.columnCount ?? "–",
     },
     {
       icon: Tags,

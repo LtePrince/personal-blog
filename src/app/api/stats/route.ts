@@ -3,7 +3,9 @@ import type { DownstreamResponse } from "@/types/api";
 
 interface BackendStatsData {
   post_count: number;
+  column_count: number;
   tag_count: number;
+  last_updated_at: number;
 }
 
 /**
@@ -31,7 +33,9 @@ export async function GET() {
         success: true,
         data: {
           postCount: result.data.post_count,
+          columnCount: result.data.column_count,
           tagCount: result.data.tag_count,
+          lastUpdatedAt: result.data.last_updated_at,
         },
       });
     }
